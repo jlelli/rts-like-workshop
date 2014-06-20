@@ -71,11 +71,11 @@ if [ $DOWNLOAD == "1" ]; then
   spin $!
   
   printf "\e[92mDownloading schedtool-dl\e[0m --->  "
-  git clone https://github.com/jlelli/schedtool-dl.git &
+  git clone https://github.com/jlelli/schedtool-dl.git > /dev/null 2>&1 &
   spin $!
   
   printf "\e[92mDownloading xfce4-taskmanager-dl\e[0m --->  "
-  git clone https://github.com/alessandrelli/xfce4-taskmanager-dl.git &
+  git clone https://github.com/alessandrelli/xfce4-taskmanager-dl.git > /dev/null 2>&1 &
   spin $!
 fi
 
