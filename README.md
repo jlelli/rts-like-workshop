@@ -42,7 +42,7 @@ Disk identifier: 0x0008f1bf
 ```
 
 The live system can be now installed on first partition with automated tools,
-like usb-creator-gtk, or [other means]. You can also use the mk_live_usb.sh
+like usb-creator-gtk, or [other means]. You can also use the [mk_live_usb.sh]
 script (!!!AT YOUR OWN RISK!!!), doing something like this:
 
 ```sh
@@ -88,3 +88,4 @@ TODO: add info on ready to be used virtual machine for debugging
 
 [here]:http://retis.sssup.it/~jlelli/xubuntu-live/xubuntu-14.04-dl-rc1.iso
 [other means]:https://help.ubuntu.com/community/Installation/FromUSBStick
+[mk_live_usb.sh]:http://retis.sssup.it/~jlelli/xubuntu-live/mk_live_usb.sh
