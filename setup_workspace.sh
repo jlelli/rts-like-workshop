@@ -1,4 +1,6 @@
 #!/bin/bash
+. ./config_params.sh
+
 DOWNLOAD=0
 CONFIGURE=0
 COMPILE=0
@@ -12,6 +14,8 @@ echo -e "
 
   -h
      Print this help message and exit
+  -e
+     Clean the workspace
   -d
      Download sources
   -c
@@ -32,15 +36,32 @@ function spin {
   printf "\bDONE\n"
 }
 
+function clean_workspace {
+  printf "\e[91mWARNING: \e[0mthis will erase all sources!\nAre you sure you want to proceed? [N/y] "
+  read -n 1 c
+  if [ "${c}" != "y" ]; then
+     printf "\n"
+     exit 0
+  fi
+
+  printf "\n\e[92mCleaning the workspace\e[0m --->  "
+  rm -rf rt-app/ linux/ schedtool-dl/ xfce4-taskmanager-dl/ &
+  spin $!
+}
+
 if [ $# -lt 1 ]; then
   show_help
   exit 0
 fi
 
-while getopts "hvdcC" opt; do
+while getopts "hedcC" opt; do
   case "$opt" in
   h)
     show_help
+    exit 0
+    ;;
+  e)
+    clean_workspace
     exit 0
     ;;
   d)
@@ -66,9 +87,20 @@ if [ $DOWNLOAD == "1" ]; then
   git clone https://github.com/gbagnoli/rt-app.git > /dev/null 2>&1 &
   spin $!
 
-  printf "\e[92mDownloading kernel sources (this may take a while)\e[0m --->  "
-  git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git > /dev/null 2>&1 &
-  spin $!
+  if [ "$KERNEL_VER" = "git" ]; then
+    printf "\e[92mDownloading kernel sources (this may take a while)\e[0m --->  "
+    git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git > /dev/null 2>&1 &
+    spin $!
+  else
+    printf "\e[92mDownloading kernel sources (this may take a while)\e[0m [1] --->  "
+    wget https://www.kernel.org/pub/linux/kernel/v3.x/testing/${KERNEL_VER}.tar.xz > /dev/null 2>&1 &
+    spin $!
+    printf "                                                   [2] --->  "
+    tar xJvf ${KERNEL_VER}.tar.xz > /dev/null 2>&1 &
+    spin $!
+    mv ${KERNEL_VER} linux > /dev/null 2>&1
+    rm ${KERNEL_VER}.tar.xz > /dev/null 2>&1
+  fi
   
   printf "\e[92mDownloading schedtool-dl\e[0m --->  "
   git clone https://github.com/jlelli/schedtool-dl.git > /dev/null 2>&1 &

@@ -67,6 +67,9 @@ and an Intel i7 quad-core machine, it took about 15 minutes.
 ```sh
 git clone https://github.com/jlelli/rts-like-workshop.git
 cd rts-like-workshop
+#setup configuration parameters
+vim config_params.sh
+#get sources, configure and compile them
 ./setup_workspace.sh -dcC
 ```
 
