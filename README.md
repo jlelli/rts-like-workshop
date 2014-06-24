@@ -46,7 +46,7 @@ like usb-creator-gtk, or [other means]. You can also use the [mk_live_usb.sh]
 script (!!!AT YOUR OWN RISK!!!), doing something like this:
 
 ```sh
-sudo ./mk_live_usb.sh -d /dev/sdd -e -i ../xubuntu-14.04-dl
+sudo ./mk_live_usb.sh -d /dev/sdd -e -f -i ./xubuntu-14.04-dl.iso -I
 ```
 
 Once installation has finished, shutdown the system and boot from the USB key.
