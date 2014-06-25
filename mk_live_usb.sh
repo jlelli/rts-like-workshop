@@ -183,6 +183,8 @@ while [ $# -gt 0 ]; do
     ;;
   -d | --dev)
     DEV=$1
+    LIVE_PART=${DEV}1
+    WORK_PART=${DEV}2
     shift
     ;;
   -i | --img)
