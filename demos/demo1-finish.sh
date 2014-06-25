@@ -5,7 +5,7 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-NUM_CPUS=`cat /proc/cpuinfo | grep processor | wc -l`
+NUM_CPUS=$1
 
 let C=NUM_CPUS-1
 
