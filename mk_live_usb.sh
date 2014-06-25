@@ -144,7 +144,7 @@ configure_workspace() {
   mkdir -p ${WORKSPACE_DIR}
   mount ${WORK_PART} ${WORKSPACE_DIR}
 
-  ./setup_workspace.sh -d
+  ./setup_workspace.sh -dcC
   printf "\e[92mTransferring workspace on ${WORK_PART}\e[0m --->  "
   sudo cp -r * ${WORKSPACE_DIR} > /dev/null 2>&1 &
   spin $!
