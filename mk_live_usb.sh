@@ -4,6 +4,7 @@
 ERASE_DEV=0
 FORMAT_DEV=0
 INSTALL=0
+WORKSPACE=0
 DEV=/dev/sdd
 LIVE_PART=${DEV}1
 WORK_PART=${DEV}2
@@ -11,6 +12,7 @@ LIVE_IMG=./ubuntu-live.iso
 WORK_DIR=$(pwd)
 USB_KEY=/tmp/usb_key  
 LIVE_DIR=/tmp/live
+WORKSPACE_DIR=/tmp/workspace
 
 usage() {
 echo -e "
@@ -28,6 +30,8 @@ echo -e "
      live image iso
   -I, --install
      install the live system
+  -w, --workspace
+     setup the live system workspace
 "
 }
 
@@ -55,11 +59,17 @@ Are you sure you want to continue? [N/y] "
 }
 
 cleanup() {
-  printf "\e[92mCleaning up...\e[0m\n"
+  cd ${WORK_DIR}
+
+  printf "\n\e[92mCleaning up...\e[0m\n"
   [ -d "${USB_KEY}" ] && umount ${USB_KEY} && rmdir ${USB_KEY}
   [ -d "${LIVE_DIR}" ] && umount ${LIVE_DIR} && rmdir ${LIVE_DIR}
-  umount ${LIVE_PART}
-  umount ${WORK_PART}
+  [ -d "${WORKSPACE_DIR}" ] && umount -f ${WORKSPACE_DIR} && rmdir ${WORKSPACE_DIR}
+
+  umount ${LIVE_PART} > /dev/null 2>&1
+  umount ${WORK_PART} > /dev/null 2>&1
+
+  exit 0
 }
 
 erase_dev() {
@@ -73,18 +83,15 @@ erase_dev() {
   dd if=/dev/zero of=${DEV} bs=1024k > /dev/null 2>&1 &
   spin $!
   printf "\e[92mCreating empty msdos partition table ${DEV}\e[0m --->  "
-  parted -s ${DEV} "mklabel msdos" > /dev/null 2>&1 &
+  printf "w\n" | fdisk ${DEV} > /dev/null 2>&1 &
   spin $!
-  printf "\e[92mCreating bootable FAT32 on ${LIVE_PART}\e[0m --->  "
-  parted -s ${DEV} "mkpart primary fat32 0 2G" > /dev/null 2>&1 &
-  spin $!
-  parted -s ${DEV} "set 1 boot on" > /dev/null 2>&1 &
-  printf "\e[92mCreating workspace (ext3) partition on ${WORK_PART}\e[0m --->  "
-  parted -s ${DEV} "mkpart primary ext3 2G -1" > /dev/null 2>&1 &
+  printf "\e[92mCreating partitions on ${DEV}\e[0m --->  "
+  printf "n\np\n1\n\n+2G\na\n1\nt\nc\nn\np\n2\n\n\nw\n" | fdisk ${DEV} > /dev/null 2>&1 &
   spin $!
   printf "\e[92mInstalling MBR on ${DEV}\e[0m --->  "
-  cat /usr/lib/syslinux/mbr.bin > ${DEV}
+  install-mbr ${DEV}
   spin $!
+  partprobe ${DEV}
 }
 
 format() {
@@ -111,10 +118,10 @@ install_image() {
   syslinux -i ${LIVE_PART} > /dev/null 2>&1 &
   spin $!
 
-  mkdir ${USB_KEY}
+  mkdir -p ${USB_KEY}
   mount ${LIVE_PART} ${USB_KEY}
-  mkdir ${LIVE_DIR}
-  mount ${LIVE_IMG} -t iso9660 -o loop ${LIVE_DIR} > /dev/null 2>&1
+  mkdir -p ${LIVE_DIR}
+  mount -o loop ${LIVE_IMG} ${LIVE_DIR} > /dev/null 2>&1
 
   printf "\e[92mCopying files\e[0m --->  "
   cd ${LIVE_DIR}
@@ -127,9 +134,25 @@ install_image() {
   mv ${USB_KEY}/isolinux ${USB_KEY}/syslinux > /dev/null 2>&1 &
   spin $!
   mv ${USB_KEY}/syslinux/isolinux.cfg ${USB_KEY}/syslinux/syslinux.cfg
+
+  printf "\e[92mWait for data to be written\e[0m --->  "
+  sync &
+  spin $!
 }
 
 configure_workspace() {
+  mkdir -p ${WORKSPACE_DIR}
+  mount ${WORK_PART} ${WORKSPACE_DIR}
+
+  ./setup_workspace.sh -d
+  printf "\e[92mTransferring workspace on ${WORK_PART}\e[0m --->  "
+  sudo cp -r * ${WORKSPACE_DIR} > /dev/null 2>&1 &
+  spin $!
+  yes | ./setup_workspace.sh -e
+
+  printf "\e[92mWait for data to be written\e[0m --->  "
+  sync &
+  spin $!
 }
 
 if [ $(id -u) != 0 ]; then 
@@ -155,6 +178,9 @@ while [ $# -gt 0 ]; do
   -I | --install)
     INSTALL=1
     ;;
+  -w | --workspace)
+    WORKSPACE=1
+    ;;
   -d | --dev)
     DEV=$1
     shift
@@ -177,6 +203,7 @@ trap cleanup SIGINT SIGTERM
 [ $ERASE_DEV -eq 1 ] && erase_dev
 [ $FORMAT_DEV -eq 1 ] && format
 [ $INSTALL -eq 1 ] && install_image
+[ $WORKSPACE -eq 1 ] && configure_workspace
 
 cleanup
 
